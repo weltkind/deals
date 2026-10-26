@@ -13,8 +13,15 @@ RUN apt-get update && apt-get install -y \
 
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
+RUN apt-get update && apt-get install -y netcat-openbsd
+
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 WORKDIR /var/www/html
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 RUN chown -R www-data:www-data /var/www/html
+
+ENTRYPOINT ["entrypoint.sh"]

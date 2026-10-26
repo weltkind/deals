@@ -2,7 +2,7 @@ services:
   deals-php:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     volumes:
       - .:/var/www/html
     networks:
