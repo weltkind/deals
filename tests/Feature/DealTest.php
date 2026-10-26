@@ -150,6 +150,134 @@ test('user cannot sell more than bought', function () {
     ]);
 });
 
+test('comment is saved to both deal and first deal item', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $comment = 'Initial comment';
+    $this->post('/deals', [
+        'ticker' => 'AAPL',
+        'count' => 10,
+        'price' => 150.00,
+        'comment' => $comment,
+    ]);
+
+    $deal = Deal::where('ticker', 'AAPL')->first();
+    expect($deal->comment)->toBe($comment);
+    
+    $item = $deal->items->first();
+    expect($item->comment)->toBe($comment);
+});
+
+test('deal is automatically closed when balance reaches zero', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $deal = Deal::create(['user_id' => $user->id, 'ticker' => 'AAPL']);
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal->id,
+        'type' => DealItem::TYPE_BUY,
+        'ticker' => 'AAPL',
+        'price' => 100,
+        'count' => 10,
+        'total' => 1000,
+        'commission' => 0.1,
+    ]);
+
+    $this->post("/deals/{$deal->id}/items", [
+        'type' => DealItem::TYPE_SELL,
+        'count' => 10,
+        'price' => 110,
+        'total' => 1100,
+    ]);
+
+    $deal = $deal->fresh();
+    expect($deal->closed_at)->not->toBeNull();
+});
+
+test('short trading: user can sell then buy back', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    // Открываем шорт
+    $response = $this->post('/deals', [
+        'ticker' => 'TSLA',
+        'type' => DealItem::TYPE_SELL,
+        'count' => 5,
+        'price' => 200.00,
+        'comment' => 'Shorting TSLA',
+    ]);
+
+    $deal = Deal::where('ticker', 'TSLA')->first();
+    expect($deal->items->first()->type)->toBe(DealItem::TYPE_SELL);
+
+    // Пытаемся купить больше чем продали в шорт
+    $response = $this->post("/deals/{$deal->id}/items", [
+        'type' => DealItem::TYPE_BUY,
+        'count' => 6,
+        'price' => 190,
+        'total' => 1140,
+    ]);
+    $response->assertSessionHasErrors(['count' => 'нельзя купить больше чем сумма сделки (short)']);
+
+    // Покупаем обратно столько же
+    $this->post("/deals/{$deal->id}/items", [
+        'type' => DealItem::TYPE_BUY,
+        'count' => 5,
+        'price' => 190,
+        'total' => 950,
+    ]);
+
+    $deal = $deal->fresh();
+    expect($deal->closed_at)->not->toBeNull();
+    // Result: Sold at 1000, Bought at 950. 
+    // current_total = buy(950) - sell(1000) = -50.
+    expect((float)$deal->current_total)->toBe(-50.0);
+});
+
+test('deal card shows correct totals and commissions', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $deal = Deal::create(['user_id' => $user->id, 'ticker' => 'META']);
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal->id,
+        'type' => DealItem::TYPE_BUY,
+        'ticker' => 'META',
+        'price' => 100,
+        'count' => 10,
+        'total' => 1000,
+        'commission' => 1.0,
+    ]);
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal->id,
+        'type' => DealItem::TYPE_SELL,
+        'ticker' => 'META',
+        'price' => 120,
+        'count' => 5,
+        'total' => 600,
+        'commission' => 0.6,
+    ]);
+
+    // current_total = Buy(-1000) + Sell(600) = -400 (инвестировано еще 400)
+    // Подожди, логика CURRENT TOTAL в моем понимании:
+    // Если мы купили на 1000 и продали на 600, то мы В МИНУСЕ по кэшу на 400, но у нас есть акции.
+    // Если же сделка ЗАКРЫТА (10 и 10), то Current Total - это прибыль.
+    
+    // В задании: "сумма total_amount все сделок buy-sell".
+    // Если Buy=1000, Sell=600, то 1000-600=400.
+    // Если Buy=1000, Sell=1200, то 1000-1200=-200.
+    // То есть (Сумма Buy) - (Сумма Sell).
+    
+    $response = $this->get("/deals/{$deal->id}");
+    $response->assertSee('400.00'); // current_total
+    $response->assertSee('1.60'); // total_commission
+    $response->assertSee('398.40'); // net_result (400 - 1.6)
+});
+
 test('user can sell exact amount bought', function () {
     $user = User::factory()->create();
     $this->actingAs($user);

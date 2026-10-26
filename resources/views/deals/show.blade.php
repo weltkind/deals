@@ -14,6 +14,18 @@
             <p><strong>Статус:</strong> {{ $deal->closed_at ? 'Закрыта (' . $deal->closed_at->format('Y.m.d H:i:s') . ')' : 'Активна' }}</p>
             <p><strong>Дата открытия:</strong> {{ $deal->created_at->format('Y.m.d H:i:s') }}</p>
             <p><strong>Комментарий:</strong> {{ $deal->comment ?: 'Нет' }}</p>
+            <hr>
+            <p><strong>Итог сделки (Buy-Sell):</strong> 
+                <span class="{{ $deal->current_total >= 0 ? 'text-success' : 'text-danger' }}">
+                    {{ number_format($deal->current_total, 2) }}
+                </span>
+            </p>
+            <p><strong>Сумма комиссий:</strong> {{ number_format($deal->total_commission, 2) }}</p>
+            <p><strong>Чистый итог:</strong> 
+                <span class="{{ $deal->net_result >= 0 ? 'text-success' : 'text-danger' }}">
+                    {{ number_format($deal->net_result, 2) }}
+                </span>
+            </p>
         </div>
     </div>
 

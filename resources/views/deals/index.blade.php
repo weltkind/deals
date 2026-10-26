@@ -44,6 +44,13 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
+                        <label class="form-label">Тип</label>
+                        <select name="type" class="form-select">
+                            <option value="buy">Купить (Long)</option>
+                            <option value="sell">Продать (Short)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Тикер</label>
                         <input type="text" name="ticker" class="form-control" required maxlength="150">
                     </div>

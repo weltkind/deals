@@ -123,6 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
-    'broker_commission' => env('BROKER_COMMISSION', 0.004),
+    'broker_commission' => env('BROKER_COMMISSION', 0.0004),
 
 ];

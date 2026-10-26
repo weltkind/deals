@@ -41,8 +41,18 @@ class Deal extends Model
 
     public function getCurrentTotalAttribute()
     {
-        return $this->items->sum(function ($item) {
-            return $item->type === DealItem::TYPE_BUY ? $item->total : -$item->total;
-        });
+        $buyTotal = $this->items->where('type', DealItem::TYPE_BUY)->sum('total');
+        $sellTotal = $this->items->where('type', DealItem::TYPE_SELL)->sum('total');
+        return $buyTotal - $sellTotal;
+    }
+
+    public function getTotalCommissionAttribute()
+    {
+        return $this->items->sum('commission');
+    }
+
+    public function getNetResultAttribute()
+    {
+        return $this->getCurrentTotalAttribute() - $this->getTotalCommissionAttribute();
     }
 }

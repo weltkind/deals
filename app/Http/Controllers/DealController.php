@@ -42,6 +42,8 @@ class DealController extends Controller
         $deal = DB::transaction(function () use ($request) {
             $validated = $request->validated();
             
+            $type = $request->input('type', DealItem::TYPE_BUY);
+
             $deal = Deal::create([
                 'user_id' => Auth::id(),
                 'ticker' => $validated['ticker'],
@@ -64,12 +66,13 @@ class DealController extends Controller
             DealItem::create([
                 'user_id' => Auth::id(),
                 'deal_id' => $deal->id,
-                'type' => DealItem::TYPE_BUY,
+                'type' => $type,
                 'ticker' => $deal->ticker,
                 'price' => $price,
                 'count' => $count,
                 'total' => $total,
                 'commission' => $commission,
+                'comment' => $validated['comment'] ?? null,
             ]);
 
             return $deal;
@@ -88,10 +91,43 @@ class DealController extends Controller
         $type = $request->input('type', DealItem::TYPE_BUY);
         $count = $validated['count'];
 
+        // Расчет текущего баланса акций
+        $currentShares = $deal->items()->sum(DB::raw("CASE WHEN type = 'buy' THEN count ELSE -count END"));
+
         if ($type === DealItem::TYPE_SELL) {
-            $totalBuy = $deal->items()->where('type', DealItem::TYPE_BUY)->sum('count');
-            if ($count > $totalBuy) {
-                return back()->withErrors(['count' => 'нельзя продать больше чем сумма сделки'])->withInput();
+            // Если мы продаем, то либо мы закрываем лонг, либо открываем шорт.
+            // Но в задании сказано: "нельзя продать больше чем сумма сделки" (для buy)
+            // И "число акций всех прошлых buy-sell deal_items включая новые из формы = 0, т.е. сделка закрыта"
+            // Это намекает на то, что баланс должен стремиться к нулю.
+            
+            // Если сделка была открыта как BUY (long), то сумма buy >= сумма sell
+            // Если сделка была открыта как SELL (short), то сумма sell >= сумма buy (в абсолютных значениях)
+            
+            $firstItem = $deal->items()->orderBy('created_at', 'asc')->first();
+            
+            if ($firstItem->type === DealItem::TYPE_BUY) {
+                $totalBuy = $deal->items()->where('type', DealItem::TYPE_BUY)->sum('count');
+                $totalSell = $deal->items()->where('type', DealItem::TYPE_SELL)->sum('count');
+                if ($totalSell + $count > $totalBuy) {
+                    return back()->withErrors(['count' => 'нельзя продать больше чем сумма сделки'])->withInput();
+                }
+            } else {
+                // Short trading logic: first item is SELL.
+                // В шорте мы сначала продаем, потом покупаем.
+                // Для простоты пока оставим проверку только для лонга, если не указано иное, 
+                // но задание просит "проверь аналогичную логику при торговле в шорт".
+                // В шорте нельзя КУПИТЬ больше чем продали.
+            }
+        }
+
+        if ($type === DealItem::TYPE_BUY) {
+            $firstItem = $deal->items()->orderBy('created_at', 'asc')->first();
+            if ($firstItem && $firstItem->type === DealItem::TYPE_SELL) {
+                $totalSell = $deal->items()->where('type', DealItem::TYPE_SELL)->sum('count');
+                $totalBuy = $deal->items()->where('type', DealItem::TYPE_BUY)->sum('count');
+                if ($totalBuy + $count > $totalSell) {
+                    return back()->withErrors(['count' => 'нельзя купить больше чем сумма сделки (short)'])->withInput();
+                }
             }
         }
 
@@ -108,7 +144,7 @@ class DealController extends Controller
             $commissionRate = config('app.broker_commission', 0.0001);
             $commission = $total * $commissionRate;
 
-            DealItem::create([
+            $dealItem = DealItem::create([
                 'user_id' => Auth::id(),
                 'deal_id' => $deal->id,
                 'type' => $type,
@@ -119,6 +155,12 @@ class DealController extends Controller
                 'commission' => $commission,
                 'comment' => $validated['comment'] ?? null,
             ]);
+
+            // Проверка закрытия сделки
+            $remainingShares = $deal->items()->sum(DB::raw("CASE WHEN type = 'buy' THEN count ELSE -count END"));
+            if ($remainingShares == 0) {
+                $deal->update(['closed_at' => now()]);
+            }
         });
 
         return redirect()->route('deals.show', $deal)->with('success', 'Операция добавлена');

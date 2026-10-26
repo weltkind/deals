@@ -18,9 +18,9 @@ return new class extends Migration
             $table->string('type'); // buy, sell
             $table->string('ticker', 150);
             $table->text('comment')->nullable();
-            $table->decimal('price', 10, 6);
+            $table->decimal('price', 16, 6);
             $table->integer('count');
-            $table->decimal('total', 10, 6);
+            $table->decimal('total', 16, 2);
             $table->decimal('commission', 10, 2);
             $table->timestamp('closed_at')->nullable();
             $table->timestamps();
