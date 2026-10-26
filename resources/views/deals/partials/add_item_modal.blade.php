@@ -1,31 +1,31 @@
-<div class="modal fade" id="addItemModal{{ $deal->id }}" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form action="{{ route('deals.items.store', $deal) }}" method="POST">
             @csrf
+            <input type="hidden" name="type" value="{{ $type }}">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Добавить операцию: {{ $deal->ticker }}</h5>
+                    <h5 class="modal-title">{{ $title }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Тип</label>
-                        <select name="type" class="form-select">
-                            <option value="{{ \App\Models\DealItem::TYPE_BUY }}">Покупка (Buy)</option>
-                            <option value="{{ \App\Models\DealItem::TYPE_SELL }}">Продажа (Sell)</option>
-                        </select>
+                        <label class="form-label">Тип: <strong>{{ $type === \App\Models\DealItem::TYPE_BUY ? 'Покупка (Buy)' : 'Продажа (Sell)' }}</strong></label>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Кол-во акций</label>
-                        <input type="number" name="count" id="count_{{ $deal->id }}" class="form-control" required min="1">
+                        <input type="number" name="count" id="count_{{ $modalId }}" class="form-control" required min="1" 
+                            value="{{ $type === \App\Models\DealItem::TYPE_SELL ? $deal->initial_count : '' }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Цена за акцию</label>
-                        <input type="number" step="0.000001" name="price" id="price_{{ $deal->id }}" class="form-control">
+                        <input type="number" step="0.000001" name="price" id="price_{{ $modalId }}" class="form-control"
+                            value="{{ $type === \App\Models\DealItem::TYPE_SELL ? $deal->items->where('type', \App\Models\DealItem::TYPE_BUY)->first()?->price : '' }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Итого</label>
-                        <input type="number" step="0.000001" name="total" id="total_{{ $deal->id }}" class="form-control">
+                        <input type="number" step="0.000001" name="total" id="total_{{ $modalId }}" class="form-control"
+                            value="{{ $type === \App\Models\DealItem::TYPE_SELL ? $deal->initial_total : '' }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Комментарий</label>
@@ -43,10 +43,10 @@
 
 <script>
 (function() {
-    const dealId = '{{ $deal->id }}';
-    const priceInput = document.getElementById('price_' + dealId);
-    const countInput = document.getElementById('count_' + dealId);
-    const totalInput = document.getElementById('total_' + dealId);
+    const modalId = '{{ $modalId }}';
+    const priceInput = document.getElementById('price_' + modalId);
+    const countInput = document.getElementById('count_' + modalId);
+    const totalInput = document.getElementById('total_' + modalId);
 
     function calculate(e) {
         const p = parseFloat(priceInput.value);

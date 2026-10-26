@@ -38,13 +38,17 @@ test('user can open a deal', function () {
         'ticker' => 'AAPL',
     ]);
 
+    $commissionRate = config('app.broker_commission', 0.0001);
+    $total = 1500;
+    $commission = $total * $commissionRate;
+
     $this->assertDatabaseHas('deal_items', [
         'ticker' => 'AAPL',
         'type' => DealItem::TYPE_BUY,
         'price' => 150,
         'count' => 10,
         'total' => 1500,
-        'commission' => 1500 * 0.0001,
+        'commission' => $commission,
     ]);
 });
 
@@ -88,6 +92,16 @@ test('user can add item to deal', function () {
     $this->actingAs($user);
 
     $deal = Deal::create(['user_id' => $user->id, 'ticker' => 'ETH']);
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal->id,
+        'type' => DealItem::TYPE_BUY,
+        'ticker' => 'ETH',
+        'price' => 1000,
+        'count' => 10,
+        'total' => 10000,
+        'commission' => 1,
+    ]);
 
     $response = $this->post("/deals/{$deal->id}/items", [
         'type' => DealItem::TYPE_SELL,
@@ -102,6 +116,122 @@ test('user can add item to deal', function () {
         'type' => DealItem::TYPE_SELL,
         'count' => 5,
         'total' => 10000,
+    ]);
+});
+
+test('user cannot sell more than bought', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $deal = Deal::create(['user_id' => $user->id, 'ticker' => 'AAPL']);
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal->id,
+        'type' => DealItem::TYPE_BUY,
+        'ticker' => 'AAPL',
+        'price' => 150,
+        'count' => 10,
+        'total' => 1500,
+        'commission' => 0.15,
+    ]);
+
+    $response = $this->post("/deals/{$deal->id}/items", [
+        'type' => DealItem::TYPE_SELL,
+        'count' => 11,
+        'price' => 160,
+        'total' => 1760,
+    ]);
+
+    $response->assertSessionHasErrors(['count' => 'нельзя продать больше чем сумма сделки']);
+    $this->assertDatabaseMissing('deal_items', [
+        'deal_id' => $deal->id,
+        'type' => DealItem::TYPE_SELL,
+        'count' => 11,
+    ]);
+});
+
+test('user can sell exact amount bought', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $deal = Deal::create(['user_id' => $user->id, 'ticker' => 'AAPL']);
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal->id,
+        'type' => DealItem::TYPE_BUY,
+        'ticker' => 'AAPL',
+        'price' => 150,
+        'count' => 10,
+        'total' => 1500,
+        'commission' => 0.15,
+    ]);
+
+    $response = $this->post("/deals/{$deal->id}/items", [
+        'type' => DealItem::TYPE_SELL,
+        'count' => 10,
+        'price' => 160,
+        'total' => 1600,
+    ]);
+
+    $response->assertRedirect("/deals/{$deal->id}");
+    $this->assertDatabaseHas('deal_items', [
+        'deal_id' => $deal->id,
+        'type' => DealItem::TYPE_SELL,
+        'count' => 10,
+    ]);
+});
+
+test('sell validation considers multiple buy items', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $deal = Deal::create(['user_id' => $user->id, 'ticker' => 'AAPL']);
+    // First buy 10
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal->id,
+        'type' => DealItem::TYPE_BUY,
+        'ticker' => 'AAPL',
+        'price' => 150,
+        'count' => 10,
+        'total' => 1500,
+        'commission' => 0.15,
+    ]);
+    // Second buy 5
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal->id,
+        'type' => DealItem::TYPE_BUY,
+        'ticker' => 'AAPL',
+        'price' => 155,
+        'count' => 5,
+        'total' => 775,
+        'commission' => 0.08,
+    ]);
+
+    // Total bought: 15. Try to sell 16.
+    $response = $this->post("/deals/{$deal->id}/items", [
+        'type' => DealItem::TYPE_SELL,
+        'count' => 16,
+        'price' => 160,
+        'total' => 2560,
+    ]);
+
+    $response->assertSessionHasErrors(['count' => 'нельзя продать больше чем сумма сделки']);
+
+    // Try to sell 15.
+    $response = $this->post("/deals/{$deal->id}/items", [
+        'type' => DealItem::TYPE_SELL,
+        'count' => 15,
+        'price' => 160,
+        'total' => 2400,
+    ]);
+
+    $response->assertRedirect("/deals/{$deal->id}");
+    $this->assertDatabaseHas('deal_items', [
+        'deal_id' => $deal->id,
+        'type' => DealItem::TYPE_SELL,
+        'count' => 15,
     ]);
 });
 

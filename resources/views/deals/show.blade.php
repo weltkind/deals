@@ -21,19 +21,19 @@
         <h4>Составляющие сделки (Deal Items)</h4>
         @if(!$deal->closed_at)
             <div>
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addItemModal{{ $deal->id }}">
-                    + Добавить операцию
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#buyItemModal{{ $deal->id }}">
+                    Купить
                 </button>
-                <form action="{{ route('deals.close', $deal) }}" method="POST" class="d-inline" onsubmit="return confirm('Закрыть сделку?')">
-                    @csrf
-                    <button type="submit" class="btn btn-warning">Закрыть сделку</button>
-                </form>
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#sellItemModal{{ $deal->id }}">
+                    Продать
+                </button>
             </div>
         @endif
     </div>
 
     @if(!$deal->closed_at)
-        @include('deals.partials.add_item_modal', ['deal' => $deal])
+        @include('deals.partials.add_item_modal', ['deal' => $deal, 'modalId' => 'buyItemModal' . $deal->id, 'type' => \App\Models\DealItem::TYPE_BUY, 'title' => 'Купить: ' . $deal->ticker])
+        @include('deals.partials.add_item_modal', ['deal' => $deal, 'modalId' => 'sellItemModal' . $deal->id, 'type' => \App\Models\DealItem::TYPE_SELL, 'title' => 'Продать: ' . $deal->ticker])
     @endif
     <table class="table table-bordered">
         <thead>

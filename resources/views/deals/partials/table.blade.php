@@ -35,19 +35,19 @@
                     <div class="btn-group">
                         <a href="{{ route('deals.show', $deal) }}" class="btn btn-sm btn-info text-white">Карточка</a>
                         @if(!$deal->closed_at)
-                            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addItemModal{{ $deal->id }}">
-                                + Добавить
+                            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#buyItemModal{{ $deal->id }}">
+                                Купить
                             </button>
-                            <form action="{{ route('deals.close', $deal) }}" method="POST" onsubmit="return confirm('Закрыть сделку?')">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-warning">Закрыть</button>
-                            </form>
+                            <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#sellItemModal{{ $deal->id }}">
+                                Продать
+                            </button>
                         @endif
                     </div>
                 </td>
             </tr>
             @if(!$deal->closed_at)
-                @include('deals.partials.add_item_modal', ['deal' => $deal])
+                @include('deals.partials.add_item_modal', ['deal' => $deal, 'modalId' => 'buyItemModal' . $deal->id, 'type' => \App\Models\DealItem::TYPE_BUY, 'title' => 'Купить: ' . $deal->ticker])
+                @include('deals.partials.add_item_modal', ['deal' => $deal, 'modalId' => 'sellItemModal' . $deal->id, 'type' => \App\Models\DealItem::TYPE_SELL, 'title' => 'Продать: ' . $deal->ticker])
             @endif
         @endforeach
     </tbody>

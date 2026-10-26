@@ -1,0 +1,18 @@
+version: '3'
+
+tasks:
+  build:
+    desc: docker compose up + composer install
+    cmds:
+      - docker compose up -d
+      - docker compose exec deals-php composer install
+
+  up:
+    desc: docker compose up -d
+    cmds:
+      - docker compose up -d
+
+  down:
+    desc: docker compose down
+    cmds:
+      - docker compose down

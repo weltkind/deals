@@ -84,13 +84,20 @@ class DealController extends Controller
             abort(403);
         }
 
-        DB::transaction(function () use ($deal, $request) {
-            $validated = $request->validated();
-            
+        $validated = $request->validated();
+        $type = $request->input('type', DealItem::TYPE_BUY);
+        $count = $validated['count'];
+
+        if ($type === DealItem::TYPE_SELL) {
+            $totalBuy = $deal->items()->where('type', DealItem::TYPE_BUY)->sum('count');
+            if ($count > $totalBuy) {
+                return back()->withErrors(['count' => 'нельзя продать больше чем сумма сделки'])->withInput();
+            }
+        }
+
+        DB::transaction(function () use ($deal, $request, $validated, $type, $count) {
             $price = $validated['price'] ?? null;
-            $count = $validated['count'];
             $total = $validated['total'] ?? null;
-            $type = $request->input('type', DealItem::TYPE_BUY);
             
             if ($request->filled(['price', 'count']) && !$request->filled('total')) {
                 $total = $price * $count;
