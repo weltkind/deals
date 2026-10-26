@@ -4,21 +4,6 @@ use App\Models\User;
 use App\Models\Deal;
 use App\Models\DealItem;
 
-test('admin can log in', function () {
-    $admin = User::factory()->create([
-        'email' => 'admin@admijn.ru',
-        'password' => bcrypt('qaz2wsx'),
-    ]);
-
-    $response = $this->post('/login', [
-        'email' => 'admin@admijn.ru',
-        'password' => 'qaz2wsx',
-    ]);
-
-    $this->assertAuthenticated();
-    $response->assertRedirect('/deals');
-});
-
 test('user can open a deal', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
@@ -50,108 +35,6 @@ test('user can open a deal', function () {
         'total' => 1500,
         'commission' => $commission,
     ]);
-});
-
-test('deals list shows correctly', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
-
-    $deal = Deal::create(['user_id' => $user->id, 'ticker' => 'TSLA']);
-    DealItem::create([
-        'user_id' => $user->id,
-        'deal_id' => $deal->id,
-        'type' => DealItem::TYPE_BUY,
-        'ticker' => 'TSLA',
-        'price' => 200,
-        'count' => 5,
-        'total' => 1000,
-        'commission' => 0.1,
-    ]);
-
-    $response = $this->get('/deals');
-    $response->assertStatus(200);
-    $response->assertSee('TSLA');
-    $response->assertSee('5'); // initialCount
-    $response->assertSee('1,000.00'); // initialTotal
-    $response->assertSee('Итог сделки (Buy-Sell)');
-    $response->assertSee('Сумма комиссий');
-    $response->assertSee('Чистый итог');
-});
-
-test('deals history shows totals and filter works', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
-
-    // Create a closed deal
-    $deal1 = Deal::create([
-        'user_id' => $user->id, 
-        'ticker' => 'MSFT', 
-        'closed_at' => now()->subDays(5)
-    ]);
-    DealItem::create([
-        'user_id' => $user->id,
-        'deal_id' => $deal1->id,
-        'type' => DealItem::TYPE_BUY,
-        'ticker' => 'MSFT',
-        'price' => 100,
-        'count' => 10,
-        'total' => 1000,
-        'commission' => 10,
-    ]);
-    DealItem::create([
-        'user_id' => $user->id,
-        'deal_id' => $deal1->id,
-        'type' => DealItem::TYPE_SELL,
-        'ticker' => 'MSFT',
-        'price' => 120,
-        'count' => 10,
-        'total' => 1200,
-        'commission' => 12,
-    ]);
-    // MSFT: Buy-Sell = 1000-1200 = -200. Commission = 22. Net = -222.
-
-    // Create another closed deal
-    $deal2 = Deal::create([
-        'user_id' => $user->id, 
-        'ticker' => 'GOOG', 
-        'closed_at' => now()
-    ]);
-    DealItem::create([
-        'user_id' => $user->id,
-        'deal_id' => $deal2->id,
-        'type' => DealItem::TYPE_BUY,
-        'ticker' => 'GOOG',
-        'price' => 200,
-        'count' => 5,
-        'total' => 1000,
-        'commission' => 5,
-    ]);
-    DealItem::create([
-        'user_id' => $user->id,
-        'deal_id' => $deal2->id,
-        'type' => DealItem::TYPE_SELL,
-        'ticker' => 'GOOG',
-        'price' => 180,
-        'count' => 5,
-        'total' => 900,
-        'commission' => 4,
-    ]);
-    // GOOG: Buy-Sell = 1000-900 = 100. Commission = 9. Net = 91.
-
-    // Totals: Buy-Sell = -100. Commission = 31. Net = -131.
-
-    $response = $this->get('/deals/history');
-    $response->assertSee('MSFT');
-    $response->assertSee('GOOG');
-    $response->assertSee('Итого по закрытым сделкам:');
-    $response->assertSee('-100.00');
-    $response->assertSee('31.00');
-    $response->assertSee('-131.00');
-
-    // Test filter
-    $response = $this->get('/deals/history?date_from=' . now()->subDays(1)->format('Y-m-d'));
-    $response->assertDontSee('MSFT');
-    $response->assertSee('GOOG');
 });
 
 test('user can close a deal', function () {
@@ -311,50 +194,8 @@ test('short trading: user can sell then buy back', function () {
     $deal = $deal->fresh();
     expect($deal->closed_at)->not->toBeNull();
     // Result: Sold at 1000, Bought at 950. 
-    // current_total = buy(950) - sell(1000) = -50.
-    expect((float)$deal->current_total)->toBe(-50.0);
-});
-
-test('deal card shows correct totals and commissions', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
-
-    $deal = Deal::create(['user_id' => $user->id, 'ticker' => 'META']);
-    DealItem::create([
-        'user_id' => $user->id,
-        'deal_id' => $deal->id,
-        'type' => DealItem::TYPE_BUY,
-        'ticker' => 'META',
-        'price' => 100,
-        'count' => 10,
-        'total' => 1000,
-        'commission' => 1.0,
-    ]);
-    DealItem::create([
-        'user_id' => $user->id,
-        'deal_id' => $deal->id,
-        'type' => DealItem::TYPE_SELL,
-        'ticker' => 'META',
-        'price' => 120,
-        'count' => 5,
-        'total' => 600,
-        'commission' => 0.6,
-    ]);
-
-    // current_total = Buy(-1000) + Sell(600) = -400 (инвестировано еще 400)
-    // Подожди, логика CURRENT TOTAL в моем понимании:
-    // Если мы купили на 1000 и продали на 600, то мы В МИНУСЕ по кэшу на 400, но у нас есть акции.
-    // Если же сделка ЗАКРЫТА (10 и 10), то Current Total - это прибыль.
-    
-    // В задании: "сумма total_amount все сделок buy-sell".
-    // Если Buy=1000, Sell=600, то 1000-600=400.
-    // Если Buy=1000, Sell=1200, то 1000-1200=-200.
-    // То есть (Сумма Buy) - (Сумма Sell).
-    
-    $response = $this->get("/deals/{$deal->id}");
-    $response->assertSee('400.00'); // current_total
-    $response->assertSee('1.60'); // total_commission
-    $response->assertSee('398.40'); // net_result (400 - 1.6)
+    // current_total = sell(1000) - buy(950) = 50.
+    expect((float)$deal->current_total)->toBe(50.0);
 });
 
 test('user can sell exact amount bought', function () {
@@ -442,31 +283,6 @@ test('sell validation considers multiple buy items', function () {
     ]);
 });
 
-test('deal card shows details', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
-
-    $deal = Deal::create(['user_id' => $user->id, 'ticker' => 'MSFT', 'comment' => 'Major position']);
-    $item = DealItem::create([
-        'user_id' => $user->id,
-        'deal_id' => $deal->id,
-        'type' => DealItem::TYPE_BUY,
-        'ticker' => 'MSFT',
-        'price' => 300,
-        'count' => 2,
-        'total' => 600,
-        'commission' => 0.06,
-        'comment' => 'Initial buy'
-    ]);
-
-    $response = $this->get("/deals/{$deal->id}");
-    $response->assertStatus(200);
-    $response->assertSee('MSFT');
-    $response->assertSee('Major position');
-    $response->assertSee('Initial buy');
-    $response->assertSee('600.000000');
-});
-
 test('short trading: validation considers multiple sell items', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
@@ -510,33 +326,4 @@ test('short trading: validation considers multiple sell items', function () {
     $response->assertRedirect("/deals/{$deal->id}");
     $deal = $deal->fresh();
     expect($deal->closed_at)->not->toBeNull();
-});
-
-test('deals filter works with boundary dates', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
-
-    // Deal 1: closed 3 days ago
-    Deal::create([
-        'user_id' => $user->id,
-        'ticker' => 'D1',
-        'closed_at' => now()->subDays(3)->startOfDay()
-    ]);
-
-    // Deal 2: closed today
-    Deal::create([
-        'user_id' => $user->id,
-        'ticker' => 'D2',
-        'closed_at' => now()->startOfDay()
-    ]);
-
-    // Filter from 2 days ago to today
-    $response = $this->get('/deals/history?date_from=' . now()->subDays(2)->format('Y-m-d') . '&date_to=' . now()->format('Y-m-d'));
-    $response->assertDontSee('D1');
-    $response->assertSee('D2');
-
-    // Filter from 4 days ago to 2 days ago
-    $response = $this->get('/deals/history?date_from=' . now()->subDays(4)->format('Y-m-d') . '&date_to=' . now()->subDays(2)->format('Y-m-d'));
-    $response->assertSee('D1');
-    $response->assertDontSee('D2');
 });

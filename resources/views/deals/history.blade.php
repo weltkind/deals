@@ -43,7 +43,7 @@
                 </div>
             </div>
 
-            @include('deals.partials.table', ['deals' => $closedDeals])
+            @include('deals.partials.history_table', ['deals' => $closedDeals])
 
             @php
                 $totalBuySell = $closedDeals->sum('current_total');
@@ -106,11 +106,11 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Цена за акцию</label>
-                        <input type="number" step="0.000001" name="price" id="price" class="form-control">
+                        <input type="number" step="0.01" name="price" id="price" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Итого</label>
-                        <input type="number" step="0.000001" name="total" id="total" class="form-control">
+                        <input type="number" step="0.01" name="total" id="total" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Комментарий</label>
@@ -139,11 +139,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (this === priceInput || this === countInput) {
             if (!isNaN(p) && !isNaN(c)) {
-                totalInput.value = (p * c).toFixed(6);
+                totalInput.value = (p * c).toFixed(2);
             }
         } else if (this === totalInput) {
             if (!isNaN(t) && !isNaN(c) && c !== 0) {
-                priceInput.value = (t / c).toFixed(6);
+                priceInput.value = (t / c).toFixed(2);
             }
         }
     }

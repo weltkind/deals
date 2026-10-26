@@ -66,9 +66,9 @@
                     <td>{{ $item->created_at->format('Y.m.d H:i:s') }}</td>
                     <td><span class="badge {{ $item->type === \App\Models\DealItem::TYPE_BUY ? 'bg-success' : 'bg-danger' }}">{{ $item->type }}</span></td>
                     <td>{{ $item->ticker }}</td>
-                    <td>{{ number_format($item->price, 6) }}</td>
+                    <td>{{ number_format($item->price, 2) }}</td>
                     <td>{{ $item->count }}</td>
-                    <td>{{ number_format($item->total, 6) }}</td>
+                    <td>{{ number_format($item->total, 2) }}</td>
                     <td>{{ number_format($item->commission, 2) }}</td>
                     <td>{{ $item->comment }}</td>
                 </tr>

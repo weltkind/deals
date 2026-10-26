@@ -69,13 +69,13 @@ class DealController extends Controller
             $total = $validated['total'] ?? null;
             
             if ($request->filled(['price', 'count']) && !$request->filled('total')) {
-                $total = $price * $count;
+                $total = round($price * $count, 2);
             } elseif ($request->filled(['total', 'count']) && !$request->filled('price')) {
-                $price = $total / $count;
+                $price = round($total / $count, 2);
             }
 
             $commissionRate = config('app.broker_commission', 0.0001);
-            $commission = $total * $commissionRate;
+            $commission = round($total * $commissionRate, 2);
 
             DealItem::create([
                 'user_id' => Auth::id(),
@@ -150,13 +150,13 @@ class DealController extends Controller
             $total = $validated['total'] ?? null;
             
             if ($request->filled(['price', 'count']) && !$request->filled('total')) {
-                $total = $price * $count;
+                $total = round($price * $count, 2);
             } elseif ($request->filled(['total', 'count']) && !$request->filled('price')) {
-                $price = $total / $count;
+                $price = round($total / $count, 2);
             }
 
             $commissionRate = config('app.broker_commission', 0.0001);
-            $commission = $total * $commissionRate;
+            $commission = round($total * $commissionRate, 2);
 
             $dealItem = DealItem::create([
                 'user_id' => Auth::id(),

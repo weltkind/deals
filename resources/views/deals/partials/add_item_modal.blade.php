@@ -19,12 +19,12 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Цена за акцию</label>
-                        <input type="number" step="0.000001" name="price" id="price_{{ $modalId }}" class="form-control"
+                        <input type="number" step="0.01" name="price" id="price_{{ $modalId }}" class="form-control"
                             value="{{ $type === \App\Models\DealItem::TYPE_SELL ? $deal->items->where('type', \App\Models\DealItem::TYPE_BUY)->first()?->price : '' }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Итого</label>
-                        <input type="number" step="0.000001" name="total" id="total_{{ $modalId }}" class="form-control"
+                        <input type="number" step="0.01" name="total" id="total_{{ $modalId }}" class="form-control"
                             value="{{ $type === \App\Models\DealItem::TYPE_SELL ? $deal->initial_total : '' }}">
                     </div>
                     <div class="mb-3">
@@ -55,11 +55,11 @@
 
         if (e.target === priceInput || e.target === countInput) {
             if (!isNaN(p) && !isNaN(c)) {
-                totalInput.value = (p * c).toFixed(6);
+                totalInput.value = (p * c).toFixed(2);
             }
         } else if (e.target === totalInput) {
             if (!isNaN(t) && !isNaN(c) && c !== 0) {
-                priceInput.value = (t / c).toFixed(6);
+                priceInput.value = (t / c).toFixed(2);
             }
         }
     }

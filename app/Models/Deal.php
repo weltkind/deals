@@ -43,7 +43,7 @@ class Deal extends Model
     {
         $buyTotal = $this->items->where('type', DealItem::TYPE_BUY)->sum('total');
         $sellTotal = $this->items->where('type', DealItem::TYPE_SELL)->sum('total');
-        return $buyTotal - $sellTotal;
+        return $sellTotal - $buyTotal;
     }
 
     public function getTotalCommissionAttribute()

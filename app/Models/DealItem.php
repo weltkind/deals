@@ -24,8 +24,8 @@ class DealItem extends Model
 
     protected $casts = [
         'closed_at' => 'datetime',
-        'price' => 'decimal:6',
-        'total' => 'decimal:6',
+        'price' => 'decimal:2',
+        'total' => 'decimal:2',
         'commission' => 'decimal:2',
     ];
 
