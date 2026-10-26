@@ -3,10 +3,10 @@
         <tr>
             <th>created_at</th>
             <th>ticker</th>
+            <th>Тип</th>
             <th>Начальный размер</th>
-            <th>Начальная сумма</th>
-            <th>Текущая сумма</th>
-            <th>Итог сделки (Buy-Sell)</th>
+            <th>Начальная позиция</th>
+            <th>Итоговая сумма</th>
             <th>Сумма комиссий</th>
             <th>Чистый итог</th>
             <th>Управление</th>
@@ -20,23 +20,26 @@
                 
                 $initialCount = $buyItems->sum('count');
                 $initialTotal = $buyItems->sum('total');
-                $currentTotal = $initialTotal - $sellItems->sum('total');
             @endphp
             <tr>
                 <td>{{ $deal->created_at->format('Y.m.d H:i:s') }}</td>
                 <td>{{ $deal->ticker }}</td>
-                <td>{{ $initialCount }}</td>
-                <td>{{ number_format($initialTotal, 2) }}</td>
-                <td>{{ number_format($currentTotal, 2) }}</td>
                 <td>
-                    <span class="{{ $deal->current_total >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ number_format($deal->current_total, 2) }}
+                    <span class="badge {{ $deal->type_label === 'Long' ? 'bg-success' : ($deal->type_label === 'Short' ? 'bg-danger' : 'bg-secondary') }}">
+                        {{ $deal->type_label }}
                     </span>
                 </td>
-                <td>{{ number_format($deal->total_commission, 2) }}</td>
+                <td>{{ $initialCount }}</td>
+                <td>{{ number_format($initialTotal, 2, '.', ' ') }}</td>
+                <td>
+                    <span class="{{ $deal->current_total >= 0 ? 'text-success' : 'text-danger' }}">
+                        {{ number_format($deal->current_total, 2, '.', ' ') }}
+                    </span>
+                </td>
+                <td>{{ number_format($deal->total_commission, 2, '.', ' ') }}</td>
                 <td>
                     <span class="{{ $deal->net_result >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ number_format($deal->net_result, 2) }}
+                        {{ number_format($deal->net_result, 2, '.', ' ') }}
                     </span>
                 </td>
                 <td>

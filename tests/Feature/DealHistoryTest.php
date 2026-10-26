@@ -65,7 +65,8 @@ test('deals history shows totals and filter works', function () {
     $response = $this->get('/deals/history');
     $response->assertSee('MSFT');
     $response->assertSee('GOOG');
-    $response->assertSee('Итог сделки (Buy-Sell)');
+    $response->assertSee('Long');
+    $response->assertSee('Итоговая сумма');
     $response->assertSee('Сумма комиссий');
     $response->assertSee('Чистый итог');
     $response->assertSee('Итого по закрытым сделкам:');

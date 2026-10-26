@@ -3,6 +3,7 @@
         <tr>
             <th>created_at</th>
             <th>ticker</th>
+            <th>Тип</th>
             <th>Начальный размер</th>
             <th>Текущее кол-во</th>
             <th>Начальная сумма</th>
@@ -25,11 +26,16 @@
             <tr>
                 <td>{{ $deal->created_at->format('Y.m.d H:i:s') }}</td>
                 <td>{{ $deal->ticker }}</td>
+                <td>
+                    <span class="badge {{ $deal->type_label === 'Long' ? 'bg-success' : ($deal->type_label === 'Short' ? 'bg-danger' : 'bg-secondary') }}">
+                        {{ $deal->type_label }}
+                    </span>
+                </td>
                 <td>{{ $initialCount }}</td>
                 <td>{{ $currentCount }}</td>
-                <td>{{ number_format($initialTotal, 2) }}</td>
-                <td>{{ number_format($currentTotal, 2) }}</td>
-                <td>{{ number_format($deal->total_commission, 2) }}</td>
+                <td>{{ number_format($initialTotal, 2, '.', ' ') }}</td>
+                <td>{{ number_format($currentTotal, 2, '.', ' ') }}</td>
+                <td>{{ number_format($deal->total_commission, 2, '.', ' ') }}</td>
                 <td>
                     <div class="btn-group">
                         <a href="{{ route('deals.show', $deal) }}" class="btn btn-sm btn-info text-white">Карточка</a>

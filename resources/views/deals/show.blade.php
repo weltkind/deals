@@ -17,13 +17,13 @@
             <hr>
             <p><strong>Итог сделки (Buy-Sell):</strong> 
                 <span class="{{ $deal->current_total >= 0 ? 'text-success' : 'text-danger' }}">
-                    {{ number_format($deal->current_total, 2) }}
+                    {{ number_format($deal->current_total, 2, '.', ' ') }}
                 </span>
             </p>
-            <p><strong>Сумма комиссий:</strong> {{ number_format($deal->total_commission, 2) }}</p>
+            <p><strong>Сумма комиссий:</strong> {{ number_format($deal->total_commission, 2, '.', ' ') }}</p>
             <p><strong>Чистый итог:</strong> 
                 <span class="{{ $deal->net_result >= 0 ? 'text-success' : 'text-danger' }}">
-                    {{ number_format($deal->net_result, 2) }}
+                    {{ number_format($deal->net_result, 2, '.', ' ') }}
                 </span>
             </p>
         </div>
@@ -66,10 +66,10 @@
                     <td>{{ $item->created_at->format('Y.m.d H:i:s') }}</td>
                     <td><span class="badge {{ $item->type === \App\Models\DealItem::TYPE_BUY ? 'bg-success' : 'bg-danger' }}">{{ $item->type }}</span></td>
                     <td>{{ $item->ticker }}</td>
-                    <td>{{ number_format($item->price, 2) }}</td>
+                    <td>{{ number_format($item->price, 2, '.', ' ') }}</td>
                     <td>{{ $item->count }}</td>
-                    <td>{{ number_format($item->total, 2) }}</td>
-                    <td>{{ number_format($item->commission, 2) }}</td>
+                    <td>{{ number_format($item->total, 2, '.', ' ') }}</td>
+                    <td>{{ number_format($item->commission, 2, '.', ' ') }}</td>
                     <td>{{ $item->comment }}</td>
                 </tr>
             @endforeach

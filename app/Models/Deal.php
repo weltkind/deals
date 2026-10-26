@@ -55,4 +55,13 @@ class Deal extends Model
     {
         return $this->getCurrentTotalAttribute() - $this->getTotalCommissionAttribute();
     }
+
+    public function getTypeLabelAttribute()
+    {
+        $firstItem = $this->items()->orderBy('created_at', 'asc')->first();
+        if (!$firstItem) {
+            return '-';
+        }
+        return $firstItem->type === DealItem::TYPE_BUY ? 'Long' : 'Short';
+    }
 }

@@ -16,3 +16,8 @@ tasks:
     desc: docker compose down
     cmds:
       - docker compose down
+
+  bash:
+    desc: run bash in deals-app
+    cmds:
+      - docker compose exec deals-php bash

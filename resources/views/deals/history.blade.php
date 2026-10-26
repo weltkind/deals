@@ -58,17 +58,17 @@
                         <div class="col-md-4">
                             <strong>Итого (Buy-Sell):</strong>
                             <span class="{{ $totalBuySell >= 0 ? 'text-success' : 'text-danger' }}">
-                                {{ number_format($totalBuySell, 2) }}
+                                {{ number_format($totalBuySell, 2, '.', ' ') }}
                             </span>
                         </div>
                         <div class="col-md-4">
                             <strong>Сумма комиссий:</strong>
-                            {{ number_format($totalCommissions, 2) }}
+                            {{ number_format($totalCommissions, 2, '.', ' ') }}
                         </div>
                         <div class="col-md-4">
                             <strong>Чистый итог:</strong>
                             <span class="{{ $totalNetResult >= 0 ? 'text-success' : 'text-danger' }}">
-                                {{ number_format($totalNetResult, 2) }}
+                                {{ number_format($totalNetResult, 2, '.', ' ') }}
                             </span>
                         </div>
                     </div>

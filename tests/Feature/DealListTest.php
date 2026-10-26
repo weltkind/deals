@@ -23,9 +23,10 @@ test('deals list shows correctly', function () {
     $response = $this->get('/deals');
     $response->assertStatus(200);
     $response->assertSee('TSLA');
+    $response->assertSee('Long');
     $response->assertSee('5'); // initialCount and currentCount in this case
     $response->assertSee('Текущее кол-во');
-    $response->assertSee('1,000.00'); // initialTotal
+    $response->assertSee('1 000.00'); // initialTotal
     $response->assertDontSee('Итог сделки (Buy-Sell)');
     $response->assertSee('Сумма комиссий');
     $response->assertDontSee('Чистый итог');
