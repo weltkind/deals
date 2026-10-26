@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class DealController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $activeDeals = Deal::where('user_id', Auth::id())
             ->whereNull('closed_at')
@@ -19,13 +19,27 @@ class DealController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $closedDeals = Deal::where('user_id', Auth::id())
-            ->whereNotNull('closed_at')
-            ->with('items')
-            ->orderBy('created_at', 'desc')
+        return view('deals.index', compact('activeDeals'));
+    }
+
+    public function history(Request $request)
+    {
+        $query = Deal::where('user_id', Auth::id())
+            ->whereNotNull('closed_at');
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('closed_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('closed_at', '<=', $request->date_to);
+        }
+
+        $closedDeals = $query->with('items')
+            ->orderBy('closed_at', 'desc')
             ->get();
 
-        return view('deals.index', compact('activeDeals', 'closedDeals'));
+        return view('deals.history', compact('closedDeals'));
     }
 
     public function show(Deal $deal)

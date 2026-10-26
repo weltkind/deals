@@ -13,21 +13,18 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-    <ul class="nav nav-tabs mb-3" id="dealsTabs" role="tablist">
+    <ul class="nav nav-tabs mb-3" id="dealsTabs">
         <li class="nav-item">
-            <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button">Активные сделки</button>
+            <a class="nav-link {{ request()->routeIs('deals.index') ? 'active' : '' }}" href="{{ route('deals.index') }}">Активные сделки</a>
         </li>
         <li class="nav-item">
-            <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button">История сделок</button>
+            <a class="nav-link {{ request()->routeIs('deals.history') ? 'active' : '' }}" href="{{ route('deals.history') }}">История сделок</a>
         </li>
     </ul>
     
     <div class="tab-content" id="dealsTabsContent">
         <div class="tab-pane fade show active" id="active">
             @include('deals.partials.table', ['deals' => $activeDeals])
-        </div>
-        <div class="tab-pane fade" id="history">
-            @include('deals.partials.table', ['deals' => $closedDeals])
         </div>
     </div>
 </div>

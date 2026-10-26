@@ -27,7 +27,7 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('deals.index') ? 'active' : '' }}" href="{{ route('deals.index') }}">Сделки</a>
+                            <a class="nav-link" href="{{ route('deals.index') }}">Сделки</a>
                         </li>
                     </ul>
                     <ul class="navbar-nav">

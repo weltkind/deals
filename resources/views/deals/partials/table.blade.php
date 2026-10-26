@@ -3,11 +3,12 @@
         <tr>
             <th>created_at</th>
             <th>ticker</th>
-            <th>Кол-во акций (остаток)</th>
             <th>Начальный размер</th>
-            <th>Текущий размер</th>
             <th>Начальная сумма</th>
             <th>Текущая сумма</th>
+            <th>Итог сделки (Buy-Sell)</th>
+            <th>Сумма комиссий</th>
+            <th>Чистый итог</th>
             <th>Управление</th>
         </tr>
     </thead>
@@ -18,19 +19,26 @@
                 $sellItems = $deal->items->where('type', \App\Models\DealItem::TYPE_SELL);
                 
                 $initialCount = $buyItems->sum('count');
-                $currentCount = $initialCount - $sellItems->sum('count');
-                
                 $initialTotal = $buyItems->sum('total');
                 $currentTotal = $initialTotal - $sellItems->sum('total');
             @endphp
             <tr>
                 <td>{{ $deal->created_at->format('Y.m.d H:i:s') }}</td>
                 <td>{{ $deal->ticker }}</td>
-                <td>{{ $currentCount }}</td>
                 <td>{{ $initialCount }}</td>
-                <td>{{ $currentCount }}</td>
                 <td>{{ number_format($initialTotal, 2) }}</td>
                 <td>{{ number_format($currentTotal, 2) }}</td>
+                <td>
+                    <span class="{{ $deal->current_total >= 0 ? 'text-success' : 'text-danger' }}">
+                        {{ number_format($deal->current_total, 2) }}
+                    </span>
+                </td>
+                <td>{{ number_format($deal->total_commission, 2) }}</td>
+                <td>
+                    <span class="{{ $deal->net_result >= 0 ? 'text-success' : 'text-danger' }}">
+                        {{ number_format($deal->net_result, 2) }}
+                    </span>
+                </td>
                 <td>
                     <div class="btn-group">
                         <a href="{{ route('deals.show', $deal) }}" class="btn btn-sm btn-info text-white">Карточка</a>

@@ -10,6 +10,7 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/deals', [DealController::class, 'index'])->name('deals.index');
+    Route::get('/deals/history', [DealController::class, 'history'])->name('deals.history');
     Route::post('/deals', [DealController::class, 'store'])->name('deals.store');
     Route::get('/deals/{deal}', [DealController::class, 'show'])->name('deals.show');
     Route::post('/deals/{deal}/close', [DealController::class, 'close'])->name('deals.close');

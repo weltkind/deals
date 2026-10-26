@@ -71,8 +71,87 @@ test('deals list shows correctly', function () {
     $response = $this->get('/deals');
     $response->assertStatus(200);
     $response->assertSee('TSLA');
-    $response->assertSee('5'); // count
-    $response->assertSee('1,000.00'); // total
+    $response->assertSee('5'); // initialCount
+    $response->assertSee('1,000.00'); // initialTotal
+    $response->assertSee('Итог сделки (Buy-Sell)');
+    $response->assertSee('Сумма комиссий');
+    $response->assertSee('Чистый итог');
+});
+
+test('deals history shows totals and filter works', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    // Create a closed deal
+    $deal1 = Deal::create([
+        'user_id' => $user->id, 
+        'ticker' => 'MSFT', 
+        'closed_at' => now()->subDays(5)
+    ]);
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal1->id,
+        'type' => DealItem::TYPE_BUY,
+        'ticker' => 'MSFT',
+        'price' => 100,
+        'count' => 10,
+        'total' => 1000,
+        'commission' => 10,
+    ]);
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal1->id,
+        'type' => DealItem::TYPE_SELL,
+        'ticker' => 'MSFT',
+        'price' => 120,
+        'count' => 10,
+        'total' => 1200,
+        'commission' => 12,
+    ]);
+    // MSFT: Buy-Sell = 1000-1200 = -200. Commission = 22. Net = -222.
+
+    // Create another closed deal
+    $deal2 = Deal::create([
+        'user_id' => $user->id, 
+        'ticker' => 'GOOG', 
+        'closed_at' => now()
+    ]);
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal2->id,
+        'type' => DealItem::TYPE_BUY,
+        'ticker' => 'GOOG',
+        'price' => 200,
+        'count' => 5,
+        'total' => 1000,
+        'commission' => 5,
+    ]);
+    DealItem::create([
+        'user_id' => $user->id,
+        'deal_id' => $deal2->id,
+        'type' => DealItem::TYPE_SELL,
+        'ticker' => 'GOOG',
+        'price' => 180,
+        'count' => 5,
+        'total' => 900,
+        'commission' => 4,
+    ]);
+    // GOOG: Buy-Sell = 1000-900 = 100. Commission = 9. Net = 91.
+
+    // Totals: Buy-Sell = -100. Commission = 31. Net = -131.
+
+    $response = $this->get('/deals/history');
+    $response->assertSee('MSFT');
+    $response->assertSee('GOOG');
+    $response->assertSee('Итого по закрытым сделкам:');
+    $response->assertSee('-100.00');
+    $response->assertSee('31.00');
+    $response->assertSee('-131.00');
+
+    // Test filter
+    $response = $this->get('/deals/history?date_from=' . now()->subDays(1)->format('Y-m-d'));
+    $response->assertDontSee('MSFT');
+    $response->assertSee('GOOG');
 });
 
 test('user can close a deal', function () {
@@ -386,4 +465,78 @@ test('deal card shows details', function () {
     $response->assertSee('Major position');
     $response->assertSee('Initial buy');
     $response->assertSee('600.000000');
+});
+
+test('short trading: validation considers multiple sell items', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    // Open short with 10 shares
+    $this->post('/deals', [
+        'ticker' => 'NVDA',
+        'type' => DealItem::TYPE_SELL,
+        'count' => 10,
+        'price' => 500.00,
+    ]);
+
+    $deal = Deal::where('ticker', 'NVDA')->first();
+
+    // Sell another 5 shares in short
+    $this->post("/deals/{$deal->id}/items", [
+        'type' => DealItem::TYPE_SELL,
+        'count' => 5,
+        'price' => 510,
+        'total' => 2550,
+    ]);
+
+    // Total sold: 15. Try to buy back 16.
+    $response = $this->post("/deals/{$deal->id}/items", [
+        'type' => DealItem::TYPE_BUY,
+        'count' => 16,
+        'price' => 490,
+        'total' => 7840,
+    ]);
+
+    $response->assertSessionHasErrors(['count' => 'нельзя купить больше чем сумма сделки (short)']);
+
+    // Buy back 15.
+    $response = $this->post("/deals/{$deal->id}/items", [
+        'type' => DealItem::TYPE_BUY,
+        'count' => 15,
+        'price' => 490,
+        'total' => 7350,
+    ]);
+
+    $response->assertRedirect("/deals/{$deal->id}");
+    $deal = $deal->fresh();
+    expect($deal->closed_at)->not->toBeNull();
+});
+
+test('deals filter works with boundary dates', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    // Deal 1: closed 3 days ago
+    Deal::create([
+        'user_id' => $user->id,
+        'ticker' => 'D1',
+        'closed_at' => now()->subDays(3)->startOfDay()
+    ]);
+
+    // Deal 2: closed today
+    Deal::create([
+        'user_id' => $user->id,
+        'ticker' => 'D2',
+        'closed_at' => now()->startOfDay()
+    ]);
+
+    // Filter from 2 days ago to today
+    $response = $this->get('/deals/history?date_from=' . now()->subDays(2)->format('Y-m-d') . '&date_to=' . now()->format('Y-m-d'));
+    $response->assertDontSee('D1');
+    $response->assertSee('D2');
+
+    // Filter from 4 days ago to 2 days ago
+    $response = $this->get('/deals/history?date_from=' . now()->subDays(4)->format('Y-m-d') . '&date_to=' . now()->subDays(2)->format('Y-m-d'));
+    $response->assertSee('D1');
+    $response->assertDontSee('D2');
 });
