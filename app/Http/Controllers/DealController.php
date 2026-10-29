@@ -51,6 +51,20 @@ class DealController extends Controller
         return view('deals.show', compact('deal'));
     }
 
+    public function destroy(Deal $deal)
+    {
+        if ($deal->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($deal) {
+            $deal->items()->delete();
+            $deal->delete();
+        });
+
+        return redirect()->route('deals.index')->with('success', 'Сделка и все её составляющие удалены');
+    }
+
     public function store(StoreDealRequest $request)
     {
         $deal = DB::transaction(function () use ($request) {
@@ -191,5 +205,81 @@ class DealController extends Controller
         ]);
 
         return redirect()->route('deals.index')->with('success', 'Сделка закрыта');
+    }
+
+    public function editItem(DealItem $item)
+    {
+        if ($item->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        return view('deals.items.edit', compact('item'));
+    }
+
+    public function updateItem(DealItem $item, StoreDealRequest $request)
+    {
+        if ($item->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $deal = $item->deal;
+        $validated = $request->validated();
+        
+        DB::transaction(function () use ($item, $deal, $request, $validated) {
+            $price = $validated['price'] ?? null;
+            $count = $validated['count'];
+            $total = $validated['total'] ?? null;
+            
+            if ($request->filled(['price', 'count']) && !$request->filled('total')) {
+                $total = round($price * $count, 2);
+            } elseif ($request->filled(['total', 'count']) && !$request->filled('price')) {
+                $price = round($total / $count, 2);
+            }
+
+            $commissionRate = config('app.broker_commission', 0.0001);
+            $commission = round($total * $commissionRate, 2);
+
+            $item->update([
+                'price' => $price,
+                'count' => $count,
+                'total' => $total,
+                'commission' => $commission,
+                'comment' => $validated['comment'] ?? null,
+            ]);
+
+            $this->recalculateDealStatus($deal);
+        });
+
+        return redirect()->route('deals.show', $deal)->with('success', 'Операция обновлена');
+    }
+
+    public function destroyItem(DealItem $item)
+    {
+        if ($item->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $deal = $item->deal;
+
+        DB::transaction(function () use ($item, $deal) {
+            $item->delete();
+            $this->recalculateDealStatus($deal);
+        });
+
+        return redirect()->route('deals.show', $deal)->with('success', 'Операция удалена');
+    }
+
+    private function recalculateDealStatus(Deal $deal)
+    {
+        $remainingShares = $deal->items()->sum(DB::raw("CASE WHEN type = 'buy' THEN count ELSE -count END"));
+        if ($remainingShares == 0) {
+            if (!$deal->closed_at) {
+                $deal->update(['closed_at' => now()]);
+            }
+        } else {
+            if ($deal->closed_at) {
+                $deal->update(['closed_at' => null]);
+            }
+        }
     }
 }

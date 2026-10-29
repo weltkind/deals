@@ -4,7 +4,7 @@
             <th>created_at</th>
             <th>ticker</th>
             <th>Тип</th>
-            <th>Начальный размер</th>
+            <th>Число акций</th>
             <th>Начальная позиция</th>
             <th>Итоговая сумма</th>
             <th>Сумма комиссий</th>
@@ -14,13 +14,6 @@
     </thead>
     <tbody>
         @foreach($deals as $deal)
-            @php
-                $buyItems = $deal->items->where('type', \App\Models\DealItem::TYPE_BUY);
-                $sellItems = $deal->items->where('type', \App\Models\DealItem::TYPE_SELL);
-                
-                $initialCount = $buyItems->sum('count');
-                $initialTotal = $buyItems->sum('total');
-            @endphp
             <tr>
                 <td>{{ $deal->created_at->format('Y.m.d H:i:s') }}</td>
                 <td>{{ $deal->ticker }}</td>
@@ -29,11 +22,12 @@
                         {{ $deal->type_label }}
                     </span>
                 </td>
-                <td>{{ $initialCount }}</td>
-                <td>{{ number_format($initialTotal, 2, '.', ' ') }}</td>
+                <td>{{ $deal->initial_count }}</td>
+                <td>{{ number_format($deal->initial_total, 2, '.', ' ') }}</td>
                 <td>
                     <span class="{{ $deal->current_total >= 0 ? 'text-success' : 'text-danger' }}">
                         {{ number_format($deal->current_total, 2, '.', ' ') }}
+                        ({{ number_format($deal->profit_percentage, 2) }}%)
                     </span>
                 </td>
                 <td>{{ number_format($deal->total_commission, 2, '.', ' ') }}</td>

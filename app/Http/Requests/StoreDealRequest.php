@@ -25,7 +25,7 @@ class StoreDealRequest extends FormRequest
             'total' => 'required_without:price|nullable|numeric|min:0',
         ];
 
-        if ($this->route('deal')) {
+        if ($this->route('deal') || $this->route('item')) {
             $rules['ticker'] = 'nullable|string|max:150';
         }
 
