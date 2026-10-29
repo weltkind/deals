@@ -47,6 +47,14 @@
                                 Продать
                             </button>
                         @endif
+                        @php
+                            $lastItem = $deal->items->sortByDesc('created_at')->first();
+                        @endphp
+                        @if($lastItem && $lastItem->image)
+                            <a href="{{ asset('uploads/' . $lastItem->image) }}" target="_blank" class="btn btn-sm p-0 border-0 me-1">
+                                <img src="{{ asset('uploads/' . $lastItem->image) }}" alt="screenshot" style="height: 31px; width: auto; object-fit: cover;" class="rounded border">
+                            </a>
+                        @endif
                     </div>
                 </td>
             </tr>
