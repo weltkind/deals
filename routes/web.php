@@ -13,6 +13,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/deals/history', [DealController::class, 'history'])->name('deals.history');
     Route::post('/deals', [DealController::class, 'store'])->name('deals.store');
     Route::get('/deals/{deal}', [DealController::class, 'show'])->name('deals.show');
+    Route::patch('/deals/{deal}', [DealController::class, 'update'])->name('deals.update');
     Route::delete('/deals/{deal}', [DealController::class, 'destroy'])->name('deals.destroy');
     Route::post('/deals/{deal}/close', [DealController::class, 'close'])->name('deals.close');
     Route::post('/deals/{deal}/items', [DealController::class, 'storeItem'])->name('deals.items.store');

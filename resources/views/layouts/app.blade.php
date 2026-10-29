@@ -29,6 +29,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('deals.index') }}">Сделки</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('deals.history') }}">Архив сделок</a>
+                        </li>
                     </ul>
                     <ul class="navbar-nav">
                         @auth

@@ -51,6 +51,22 @@ class DealController extends Controller
         return view('deals.show', compact('deal'));
     }
 
+    public function update(Deal $deal, Request $request)
+    {
+        if ($deal->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'comment' => 'nullable|string',
+            'rating' => 'nullable|integer|min:1|max:5',
+        ]);
+
+        $deal->update($validated);
+
+        return redirect()->back()->with('success', 'Сделка обновлена');
+    }
+
     public function destroy(Deal $deal)
     {
         if ($deal->user_id !== Auth::id()) {

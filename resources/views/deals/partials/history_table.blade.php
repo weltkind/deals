@@ -9,6 +9,7 @@
             <th>Итоговая сумма</th>
             <th>Сумма комиссий</th>
             <th>Чистый итог</th>
+            <th>Оценка</th>
             <th>Управление</th>
         </tr>
     </thead>
@@ -35,6 +36,15 @@
                     <span class="{{ $deal->net_result >= 0 ? 'text-success' : 'text-danger' }}">
                         {{ number_format($deal->net_result, 2, '.', ' ') }}
                     </span>
+                </td>
+                <td>
+                    @if($deal->rating == 5)
+                        <span class="badge bg-success">5</span>
+                    @elseif(in_array($deal->rating, [1, 2]))
+                        <span class="badge bg-danger">{{ $deal->rating }}</span>
+                    @else
+                        {{ $deal->rating ?: '-' }}
+                    @endif
                 </td>
                 <td>
                     <div class="btn-group">

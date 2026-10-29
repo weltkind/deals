@@ -17,22 +17,45 @@
             <h3>Сделка #{{ $deal->id }} ({{ $deal->ticker }})</h3>
         </div>
         <div class="card-body">
-            <p><strong>Статус:</strong> {{ $deal->closed_at ? 'Закрыта (' . $deal->closed_at->format('Y.m.d H:i:s') . ')' : 'Активна' }}</p>
-            <p><strong>Дата открытия:</strong> {{ $deal->created_at->format('Y.m.d H:i:s') }}</p>
-            <p><strong>Комментарий:</strong> {{ $deal->comment ?: 'Нет' }}</p>
-            <hr>
-            <p><strong>Итог сделки (Buy-Sell):</strong> 
-                <span class="{{ $deal->current_total >= 0 ? 'text-success' : 'text-danger' }}">
-                    {{ number_format($deal->current_total, 2, '.', ' ') }}
-                    ({{ number_format($deal->profit_percentage, 2) }}%)
-                </span>
-            </p>
-            <p><strong>Сумма комиссий:</strong> {{ number_format($deal->total_commission, 2, '.', ' ') }}</p>
-            <p><strong>Чистый итог:</strong> 
-                <span class="{{ $deal->net_result >= 0 ? 'text-success' : 'text-danger' }}">
-                    {{ number_format($deal->net_result, 2, '.', ' ') }}
-                </span>
-            </p>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Статус:</strong> {{ $deal->closed_at ? 'Закрыта (' . $deal->closed_at->format('Y.m.d H:i:s') . ')' : 'Активна' }}</p>
+                    <p><strong>Дата открытия:</strong> {{ $deal->created_at->format('Y.m.d H:i:s') }}</p>
+                    
+                    <form action="{{ route('deals.update', $deal) }}" method="POST">
+                        @csrf
+                        @method('PATCH')
+                        <div class="mb-3">
+                            <label for="comment" class="form-label"><strong>Комментарий:</strong></label>
+                            <textarea name="comment" id="comment" class="form-control" rows="2">{{ $deal->comment }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rating" class="form-label"><strong>Оценка:</strong></label>
+                            <select name="rating" id="rating" class="form-select">
+                                <option value="">Без оценки</option>
+                                @foreach([1, 2, 3, 4, 5] as $val)
+                                    <option value="{{ $val }}" {{ $deal->rating == $val ? 'selected' : '' }}>{{ $val }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+                    </form>
+                </div>
+                <div class="col-md-6 border-start">
+                    <p><strong>Итог сделки (Buy-Sell):</strong> 
+                        <span class="{{ $deal->current_total >= 0 ? 'text-success' : 'text-danger' }}">
+                            {{ number_format($deal->current_total, 2, '.', ' ') }}
+                            ({{ number_format($deal->profit_percentage, 2) }}%)
+                        </span>
+                    </p>
+                    <p><strong>Сумма комиссий:</strong> {{ number_format($deal->total_commission, 2, '.', ' ') }}</p>
+                    <p><strong>Чистый итог:</strong> 
+                        <span class="{{ $deal->net_result >= 0 ? 'text-success' : 'text-danger' }}">
+                            {{ number_format($deal->net_result, 2, '.', ' ') }}
+                        </span>
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 

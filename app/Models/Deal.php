@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Deal extends Model
 {
-    protected $fillable = ['user_id', 'ticker', 'comment', 'closed_at'];
+    protected $fillable = ['user_id', 'ticker', 'comment', 'rating', 'closed_at'];
 
     protected $casts = [
         'closed_at' => 'datetime',
