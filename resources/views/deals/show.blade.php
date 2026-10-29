@@ -65,6 +65,7 @@
                 <th>Итого</th>
                 <th>Комиссия</th>
                 <th>Комментарий</th>
+                <th>Скриншот</th>
                 <th>Действия</th>
             </tr>
         </thead>
@@ -79,6 +80,13 @@
                     <td>{{ number_format($item->total, 2, '.', ' ') }}</td>
                     <td>{{ number_format($item->commission, 2, '.', ' ') }}</td>
                     <td>{{ $item->comment }}</td>
+                    <td>
+                        @if($item->image)
+                            <a href="{{ asset('uploads/' . $item->image) }}" target="_blank">
+                                <img src="{{ asset('uploads/' . $item->image) }}" alt="screenshot" style="max-width: 100px; max-height: 100px;">
+                            </a>
+                        @endif
+                    </td>
                     <td>
                         <div class="btn-group" role="group">
                             <a href="{{ route('deals.items.edit', $item) }}" class="btn btn-sm btn-outline-primary">Редактировать</a>

@@ -47,9 +47,101 @@
                     @enderror
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label">Скриншот</label>
+                    <div id="image_container" class="mb-2">
+                        @if($item->image)
+                            <div class="mb-2" id="current_image_wrapper">
+                                <p class="text-muted small">Текущий скриншот:</p>
+                                <img src="{{ asset('uploads/' . $item->image) }}" alt="screenshot" class="img-fluid border rounded" style="max-height: 200px;">
+                                <div class="form-check mt-1">
+                                    <input class="form-check-input" type="checkbox" name="remove_image" id="remove_image" value="1">
+                                    <label class="form-check-label text-danger" for="remove_image">
+                                        Удалить текущий скриншот
+                                    </label>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    
+                    <div id="image_preview" class="border rounded p-2 text-center bg-light" style="min-height: 100px; cursor: pointer;">
+                        <span class="text-muted">Нажмите сюда и вставьте новый скриншот (Ctrl+V), чтобы заменить текущий</span>
+                    </div>
+                    <input type="hidden" name="image_data" id="image_data">
+                    <button type="button" id="clear_image" class="btn btn-sm btn-outline-danger mt-2 d-none">Отменить новый скриншот</button>
+                </div>
+
                 <button type="submit" class="btn btn-primary">Сохранить изменения</button>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const priceInput = document.getElementById('price');
+    const countInput = document.getElementById('count');
+    const totalInput = document.getElementById('total');
+
+    function calculate() {
+        const p = parseFloat(priceInput.value);
+        const c = parseFloat(countInput.value);
+        const t = parseFloat(totalInput.value);
+
+        if (this === priceInput || this === countInput) {
+            if (!isNaN(p) && !isNaN(c)) {
+                totalInput.value = (p * c).toFixed(2);
+            }
+        } else if (this === totalInput) {
+            if (!isNaN(t) && !isNaN(c) && c !== 0) {
+                priceInput.value = (t / c).toFixed(2);
+            }
+        }
+    }
+
+    if (priceInput) priceInput.addEventListener('input', calculate);
+    if (countInput) countInput.addEventListener('input', calculate);
+    if (totalInput) totalInput.addEventListener('input', calculate);
+
+    const imagePreview = document.getElementById('image_preview');
+    const imageDataInput = document.getElementById('image_data');
+    const clearImageBtn = document.getElementById('clear_image');
+    const removeImageCheckbox = document.getElementById('remove_image');
+
+    if (imagePreview) {
+        imagePreview.addEventListener('paste', function(e) {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const base64data = event.target.result;
+                        imagePreview.innerHTML = `<img src="${base64data}" class="img-fluid" style="max-height: 300px;">`;
+                        imageDataInput.value = base64data;
+                        clearImageBtn.classList.remove('d-none');
+                        
+                        // If we paste a new image, we probably don't need the "remove old" checkbox checked
+                        if (removeImageCheckbox) {
+                            removeImageCheckbox.checked = false;
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                }
+            }
+        });
+
+        imagePreview.tabIndex = 0;
+    }
+
+    if (clearImageBtn) {
+        clearImageBtn.addEventListener('click', function() {
+            imagePreview.innerHTML = '<span class="text-muted">Нажмите сюда и вставьте новый скриншот (Ctrl+V), чтобы заменить текущий</span>';
+            imageDataInput.value = '';
+            clearImageBtn.classList.add('d-none');
+        });
+    }
+});
+</script>
 @endsection

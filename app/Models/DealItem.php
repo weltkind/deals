@@ -19,7 +19,8 @@ class DealItem extends Model
         'count',
         'total',
         'commission',
-        'closed_at'
+        'closed_at',
+        'image'
     ];
 
     protected $casts = [
