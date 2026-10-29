@@ -2,8 +2,14 @@
 
 @section('content')
 <div class="container">
-    <div class="mb-4">
+    <div class="mb-4 d-flex justify-content-between">
         <a href="{{ route('deals.index') }}" class="btn btn-secondary">Назад к списку</a>
+        
+        <form action="{{ route('deals.destroy', $deal) }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить всю сделку и все её операции?')">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-danger">Удалить сделку</button>
+        </form>
     </div>
 
     <div class="card mb-4">
@@ -18,6 +24,7 @@
             <p><strong>Итог сделки (Buy-Sell):</strong> 
                 <span class="{{ $deal->current_total >= 0 ? 'text-success' : 'text-danger' }}">
                     {{ number_format($deal->current_total, 2, '.', ' ') }}
+                    ({{ number_format($deal->profit_percentage, 2) }}%)
                 </span>
             </p>
             <p><strong>Сумма комиссий:</strong> {{ number_format($deal->total_commission, 2, '.', ' ') }}</p>
@@ -58,6 +65,7 @@
                 <th>Итого</th>
                 <th>Комиссия</th>
                 <th>Комментарий</th>
+                <th>Действия</th>
             </tr>
         </thead>
         <tbody>
@@ -71,6 +79,16 @@
                     <td>{{ number_format($item->total, 2, '.', ' ') }}</td>
                     <td>{{ number_format($item->commission, 2, '.', ' ') }}</td>
                     <td>{{ $item->comment }}</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{{ route('deals.items.edit', $item) }}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+                            <form action="{{ route('deals.items.destroy', $item) }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить эту операцию?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
             @endforeach
         </tbody>

@@ -31,12 +31,33 @@ class Deal extends Model
 
     public function getInitialCountAttribute()
     {
-        return $this->items->where('type', DealItem::TYPE_BUY)->first()?->count ?? 0;
+        $firstItem = $this->items()->orderBy('created_at', 'asc')->first();
+        if (!$firstItem) return 0;
+        
+        return $this->items->where('type', $firstItem->type)->sum('count');
     }
 
     public function getInitialTotalAttribute()
     {
-        return $this->items->where('type', DealItem::TYPE_BUY)->first()?->total ?? 0;
+        $firstItem = $this->items()->orderBy('created_at', 'asc')->first();
+        if (!$firstItem) return 0;
+        
+        return $this->items->where('type', $firstItem->type)->sum('total');
+    }
+
+    public function getProfitPercentageAttribute()
+    {
+        $initialTotal = $this->getInitialTotalAttribute();
+        if ($initialTotal == 0) {
+            return 0;
+        }
+
+        $currentTotal = $this->getCurrentTotalAttribute();
+        
+        // Для Long: (Sell - Buy) / Buy
+        // Для Short: (Sell - Buy) / Sell (но так как в Short Buy < Sell для прибыли, а currentTotal = Sell - Buy > 0, то всё верно)
+        // В обоих случаях currentTotal это профит (или убыток), а initialTotal это стоимость открытия.
+        return ($currentTotal / $initialTotal) * 100;
     }
 
     public function getCurrentTotalAttribute()
