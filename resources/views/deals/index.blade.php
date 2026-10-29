@@ -67,6 +67,14 @@
                         <label class="form-label">Комментарий</label>
                         <textarea name="comment" class="form-control"></textarea>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Скриншот (вставьте из буфера обмена)</label>
+                        <div id="image_preview" class="border rounded p-2 text-center bg-light" style="min-height: 100px; cursor: pointer;">
+                            <span class="text-muted">Нажмите сюда и вставьте скриншот (Ctrl+V)</span>
+                        </div>
+                        <input type="hidden" name="image_data" id="image_data">
+                        <button type="button" id="clear_image" class="btn btn-sm btn-outline-danger mt-2 d-none">Удалить скриншот</button>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
@@ -102,6 +110,36 @@ document.addEventListener('DOMContentLoaded', function() {
     priceInput.addEventListener('input', calculate);
     countInput.addEventListener('input', calculate);
     totalInput.addEventListener('input', calculate);
+
+    const imagePreview = document.getElementById('image_preview');
+    const imageDataInput = document.getElementById('image_data');
+    const clearImageBtn = document.getElementById('clear_image');
+
+    imagePreview.addEventListener('paste', function(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let index in items) {
+            const item = items[index];
+            if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
+                const blob = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const base64data = event.target.result;
+                    imagePreview.innerHTML = `<img src="${base64data}" class="img-fluid" style="max-height: 300px;">`;
+                    imageDataInput.value = base64data;
+                    clearImageBtn.classList.remove('d-none');
+                };
+                reader.readAsDataURL(blob);
+            }
+        }
+    });
+
+    imagePreview.tabIndex = 0;
+
+    clearImageBtn.addEventListener('click', function() {
+        imagePreview.innerHTML = '<span class="text-muted">Нажмите сюда и вставьте скриншот (Ctrl+V)</span>';
+        imageDataInput.value = '';
+        clearImageBtn.classList.add('d-none');
+    });
 });
 </script>
 @endsection

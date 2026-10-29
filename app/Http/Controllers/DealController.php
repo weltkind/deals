@@ -58,6 +58,14 @@ class DealController extends Controller
         }
 
         DB::transaction(function () use ($deal) {
+            foreach ($deal->items as $item) {
+                if ($item->image) {
+                    $path = public_path('uploads/' . $item->image);
+                    if (file_exists($path)) {
+                        unlink($path);
+                    }
+                }
+            }
             $deal->items()->delete();
             $deal->delete();
         });
@@ -91,6 +99,20 @@ class DealController extends Controller
             $commissionRate = config('app.broker_commission', 0.0001);
             $commission = round($total * $commissionRate, 2);
 
+            $imageName = null;
+            if ($request->filled('image_data')) {
+                $imageData = $request->input('image_data');
+                if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type_match)) {
+                    $imageData = substr($imageData, strpos($imageData, ',') + 1);
+                    $imageData = base64_decode($imageData);
+                    if ($imageData !== false) {
+                        $imageName = md5($imageData) . '.jpg';
+                        $path = public_path('uploads/' . $imageName);
+                        file_put_contents($path, $imageData);
+                    }
+                }
+            }
+
             DealItem::create([
                 'user_id' => Auth::id(),
                 'deal_id' => $deal->id,
@@ -101,6 +123,7 @@ class DealController extends Controller
                 'total' => $total,
                 'commission' => $commission,
                 'comment' => $validated['comment'] ?? null,
+                'image' => $imageName,
             ]);
 
             return $deal;
@@ -172,6 +195,20 @@ class DealController extends Controller
             $commissionRate = config('app.broker_commission', 0.0001);
             $commission = round($total * $commissionRate, 2);
 
+            $imageName = null;
+            if ($request->filled('image_data')) {
+                $imageData = $request->input('image_data');
+                if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type_match)) {
+                    $imageData = substr($imageData, strpos($imageData, ',') + 1);
+                    $imageData = base64_decode($imageData);
+                    if ($imageData !== false) {
+                        $imageName = md5($imageData) . '.jpg';
+                        $path = public_path('uploads/' . $imageName);
+                        file_put_contents($path, $imageData);
+                    }
+                }
+            }
+
             $dealItem = DealItem::create([
                 'user_id' => Auth::id(),
                 'deal_id' => $deal->id,
@@ -182,6 +219,7 @@ class DealController extends Controller
                 'total' => $total,
                 'commission' => $commission,
                 'comment' => $validated['comment'] ?? null,
+                'image' => $imageName,
             ]);
 
             // Проверка закрытия сделки
@@ -239,12 +277,43 @@ class DealController extends Controller
             $commissionRate = config('app.broker_commission', 0.0001);
             $commission = round($total * $commissionRate, 2);
 
+            $imageName = $item->image;
+            if ($request->filled('image_data')) {
+                $imageData = $request->input('image_data');
+                if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type_match)) {
+                    $imageData = substr($imageData, strpos($imageData, ',') + 1);
+                    $imageData = base64_decode($imageData);
+                    if ($imageData !== false) {
+                        // Удаляем старый файл, если он есть
+                        if ($item->image) {
+                            $oldPath = public_path('uploads/' . $item->image);
+                            if (file_exists($oldPath)) {
+                                unlink($oldPath);
+                            }
+                        }
+
+                        $imageName = md5($imageData) . '.jpg';
+                        $path = public_path('uploads/' . $imageName);
+                        file_put_contents($path, $imageData);
+                    }
+                }
+            } elseif ($request->boolean('remove_image')) {
+                if ($item->image) {
+                    $oldPath = public_path('uploads/' . $item->image);
+                    if (file_exists($oldPath)) {
+                        unlink($oldPath);
+                    }
+                    $imageName = null;
+                }
+            }
+
             $item->update([
                 'price' => $price,
                 'count' => $count,
                 'total' => $total,
                 'commission' => $commission,
                 'comment' => $validated['comment'] ?? null,
+                'image' => $imageName,
             ]);
 
             $this->recalculateDealStatus($deal);
@@ -262,6 +331,12 @@ class DealController extends Controller
         $deal = $item->deal;
 
         DB::transaction(function () use ($item, $deal) {
+            if ($item->image) {
+                $path = public_path('uploads/' . $item->image);
+                if (file_exists($path)) {
+                    unlink($path);
+                }
+            }
             $item->delete();
             $this->recalculateDealStatus($deal);
         });
