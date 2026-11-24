@@ -16,6 +16,17 @@
                 @method('PATCH')
 
                 <div class="mb-3">
+                    <label for="type" class="form-label">Тип операции</label>
+                    <select class="form-select @error('type') is-invalid @enderror" id="type" name="type" required>
+                        <option value="buy" @selected(old('type', $item->type) === 'buy')>Покупка</option>
+                        <option value="sell" @selected(old('type', $item->type) === 'sell')>Продажа</option>
+                    </select>
+                    @error('type')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
                     <label for="price" class="form-label">Цена</label>
                     <input type="number" step="0.01" class="form-control @error('price') is-invalid @enderror" id="price" name="price" value="{{ old('price', $item->price) }}">
                     @error('price')
