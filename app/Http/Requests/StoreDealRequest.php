@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreDealRequest extends FormRequest
@@ -27,6 +26,10 @@ class StoreDealRequest extends FormRequest
 
         if ($this->route('deal') || $this->route('item')) {
             $rules['ticker'] = 'nullable|string|max:150';
+        }
+
+        if ($this->route('item')) {
+            $rules['type'] = 'sometimes|required|in:buy,sell';
         }
 
         return $rules;

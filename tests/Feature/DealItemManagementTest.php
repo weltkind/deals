@@ -1,8 +1,42 @@
 <?php
 
-use App\Models\User;
 use App\Models\Deal;
 use App\Models\DealItem;
+use App\Models\User;
+
+test('user can change the type of a deal item', function () {
+    $user = User::factory()->create();
+    $deal = Deal::create(['user_id' => $user->id, 'ticker' => 'AAPL']);
+    $item = DealItem::create([
+        'user_id' => $user->id, 'deal_id' => $deal->id, 'type' => DealItem::TYPE_BUY,
+        'ticker' => 'AAPL', 'price' => 100, 'count' => 10, 'total' => 1000, 'commission' => 0.1,
+    ]);
+
+    $this->actingAs($user)->get("/deal-items/{$item->id}/edit")
+        ->assertOk()->assertSee('name="type"', false)->assertSee('value="buy" selected', false);
+
+    $this->patch("/deal-items/{$item->id}", ['type' => 'sell', 'price' => 100, 'count' => 10, 'total' => 1000])
+        ->assertRedirect("/deals/{$deal->id}")->assertSessionHasNoErrors();
+    $this->assertDatabaseHas('deal_items', ['id' => $item->id, 'type' => 'sell']);
+
+    $this->get("/deal-items/{$item->id}/edit")->assertSee('value="sell" selected', false);
+    $this->patch("/deal-items/{$item->id}", ['type' => 'buy', 'price' => 100, 'count' => 10, 'total' => 1000])
+        ->assertSessionHasNoErrors();
+    $this->assertDatabaseHas('deal_items', ['id' => $item->id, 'type' => 'buy']);
+});
+
+test('user cannot set an invalid deal item type', function () {
+    $user = User::factory()->create();
+    $deal = Deal::create(['user_id' => $user->id, 'ticker' => 'AAPL']);
+    $item = DealItem::create([
+        'user_id' => $user->id, 'deal_id' => $deal->id, 'type' => DealItem::TYPE_BUY,
+        'ticker' => 'AAPL', 'price' => 100, 'count' => 10, 'total' => 1000, 'commission' => 0.1,
+    ]);
+
+    $this->actingAs($user)->patch("/deal-items/{$item->id}", ['type' => 'invalid', 'price' => 100, 'count' => 10])
+        ->assertSessionHasErrors('type');
+    $this->assertDatabaseHas('deal_items', ['id' => $item->id, 'type' => 'buy']);
+});
 
 test('user can edit a deal item', function () {
     $user = User::factory()->create();
@@ -90,7 +124,7 @@ test('deal status is recalculated after item edit/delete', function () {
 
     // Deal should be closed now
     $deal->update(['closed_at' => now()]); // In real logic it would be closed on item2 creation if through controller
-    
+
     // Check it's closed
     expect($deal->fresh()->closed_at)->not->toBeNull();
 
@@ -120,7 +154,7 @@ test('deal status is recalculated after item edit/delete', function () {
     ]);
     // Manually trigger recalculation via dummy update or just call the logic
     // Actually our updateItem/destroyItem calls it.
-    
+
     $this->patch("/deal-items/{$item2->id}", [
         'count' => 10,
         'price' => 100,

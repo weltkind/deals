@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreDealRequest;
 use App\Models\Deal;
 use App\Models\DealItem;
-use App\Http\Requests\StoreDealRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DealController extends Controller
 {
@@ -48,6 +48,7 @@ class DealController extends Controller
             abort(403);
         }
         $deal->load('items');
+
         return view('deals.show', compact('deal'));
     }
 
@@ -76,7 +77,7 @@ class DealController extends Controller
         DB::transaction(function () use ($deal) {
             foreach ($deal->items as $item) {
                 if ($item->image) {
-                    $path = public_path('uploads/' . $item->image);
+                    $path = public_path('uploads/'.$item->image);
                     if (file_exists($path)) {
                         unlink($path);
                     }
@@ -93,7 +94,7 @@ class DealController extends Controller
     {
         $deal = DB::transaction(function () use ($request) {
             $validated = $request->validated();
-            
+
             $type = $request->input('type', DealItem::TYPE_BUY);
 
             $deal = Deal::create([
@@ -105,10 +106,10 @@ class DealController extends Controller
             $price = $validated['price'] ?? null;
             $count = $validated['count'];
             $total = $validated['total'] ?? null;
-            
-            if ($request->filled(['price', 'count']) && !$request->filled('total')) {
+
+            if ($request->filled(['price', 'count']) && ! $request->filled('total')) {
                 $total = round($price * $count, 2);
-            } elseif ($request->filled(['total', 'count']) && !$request->filled('price')) {
+            } elseif ($request->filled(['total', 'count']) && ! $request->filled('price')) {
                 $price = round($total / $count, 2);
             }
 
@@ -122,8 +123,8 @@ class DealController extends Controller
                     $imageData = substr($imageData, strpos($imageData, ',') + 1);
                     $imageData = base64_decode($imageData);
                     if ($imageData !== false) {
-                        $imageName = md5($imageData) . '.jpg';
-                        $path = public_path('uploads/' . $imageName);
+                        $imageName = md5($imageData).'.jpg';
+                        $path = public_path('uploads/'.$imageName);
                         file_put_contents($path, $imageData);
                     }
                 }
@@ -166,12 +167,12 @@ class DealController extends Controller
             // Но в задании сказано: "нельзя продать больше чем сумма сделки" (для buy)
             // И "число акций всех прошлых buy-sell deal_items включая новые из формы = 0, т.е. сделка закрыта"
             // Это намекает на то, что баланс должен стремиться к нулю.
-            
+
             // Если сделка была открыта как BUY (long), то сумма buy >= сумма sell
             // Если сделка была открыта как SELL (short), то сумма sell >= сумма buy (в абсолютных значениях)
-            
+
             $firstItem = $deal->items()->orderBy('created_at', 'asc')->first();
-            
+
             if ($firstItem->type === DealItem::TYPE_BUY) {
                 $totalBuy = $deal->items()->where('type', DealItem::TYPE_BUY)->sum('count');
                 $totalSell = $deal->items()->where('type', DealItem::TYPE_SELL)->sum('count');
@@ -181,7 +182,7 @@ class DealController extends Controller
             } else {
                 // Short trading logic: first item is SELL.
                 // В шорте мы сначала продаем, потом покупаем.
-                // Для простоты пока оставим проверку только для лонга, если не указано иное, 
+                // Для простоты пока оставим проверку только для лонга, если не указано иное,
                 // но задание просит "проверь аналогичную логику при торговле в шорт".
                 // В шорте нельзя КУПИТЬ больше чем продали.
             }
@@ -201,10 +202,10 @@ class DealController extends Controller
         DB::transaction(function () use ($deal, $request, $validated, $type, $count) {
             $price = $validated['price'] ?? null;
             $total = $validated['total'] ?? null;
-            
-            if ($request->filled(['price', 'count']) && !$request->filled('total')) {
+
+            if ($request->filled(['price', 'count']) && ! $request->filled('total')) {
                 $total = round($price * $count, 2);
-            } elseif ($request->filled(['total', 'count']) && !$request->filled('price')) {
+            } elseif ($request->filled(['total', 'count']) && ! $request->filled('price')) {
                 $price = round($total / $count, 2);
             }
 
@@ -218,8 +219,8 @@ class DealController extends Controller
                     $imageData = substr($imageData, strpos($imageData, ',') + 1);
                     $imageData = base64_decode($imageData);
                     if ($imageData !== false) {
-                        $imageName = md5($imageData) . '.jpg';
-                        $path = public_path('uploads/' . $imageName);
+                        $imageName = md5($imageData).'.jpg';
+                        $path = public_path('uploads/'.$imageName);
                         file_put_contents($path, $imageData);
                     }
                 }
@@ -255,7 +256,7 @@ class DealController extends Controller
         }
 
         $deal->update([
-            'closed_at' => now()
+            'closed_at' => now(),
         ]);
 
         return redirect()->route('deals.index')->with('success', 'Сделка закрыта');
@@ -278,15 +279,15 @@ class DealController extends Controller
 
         $deal = $item->deal;
         $validated = $request->validated();
-        
+
         DB::transaction(function () use ($item, $deal, $request, $validated) {
             $price = $validated['price'] ?? null;
             $count = $validated['count'];
             $total = $validated['total'] ?? null;
-            
-            if ($request->filled(['price', 'count']) && !$request->filled('total')) {
+
+            if ($request->filled(['price', 'count']) && ! $request->filled('total')) {
                 $total = round($price * $count, 2);
-            } elseif ($request->filled(['total', 'count']) && !$request->filled('price')) {
+            } elseif ($request->filled(['total', 'count']) && ! $request->filled('price')) {
                 $price = round($total / $count, 2);
             }
 
@@ -302,20 +303,20 @@ class DealController extends Controller
                     if ($imageData !== false) {
                         // Удаляем старый файл, если он есть
                         if ($item->image) {
-                            $oldPath = public_path('uploads/' . $item->image);
+                            $oldPath = public_path('uploads/'.$item->image);
                             if (file_exists($oldPath)) {
                                 unlink($oldPath);
                             }
                         }
 
-                        $imageName = md5($imageData) . '.jpg';
-                        $path = public_path('uploads/' . $imageName);
+                        $imageName = md5($imageData).'.jpg';
+                        $path = public_path('uploads/'.$imageName);
                         file_put_contents($path, $imageData);
                     }
                 }
             } elseif ($request->boolean('remove_image')) {
                 if ($item->image) {
-                    $oldPath = public_path('uploads/' . $item->image);
+                    $oldPath = public_path('uploads/'.$item->image);
                     if (file_exists($oldPath)) {
                         unlink($oldPath);
                     }
@@ -324,6 +325,7 @@ class DealController extends Controller
             }
 
             $item->update([
+                'type' => $validated['type'] ?? $item->type,
                 'price' => $price,
                 'count' => $count,
                 'total' => $total,
@@ -348,7 +350,7 @@ class DealController extends Controller
 
         DB::transaction(function () use ($item, $deal) {
             if ($item->image) {
-                $path = public_path('uploads/' . $item->image);
+                $path = public_path('uploads/'.$item->image);
                 if (file_exists($path)) {
                     unlink($path);
                 }
@@ -364,7 +366,7 @@ class DealController extends Controller
     {
         $remainingShares = $deal->items()->sum(DB::raw("CASE WHEN type = 'buy' THEN count ELSE -count END"));
         if ($remainingShares == 0) {
-            if (!$deal->closed_at) {
+            if (! $deal->closed_at) {
                 $deal->update(['closed_at' => now()]);
             }
         } else {
